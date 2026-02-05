@@ -142,6 +142,20 @@
             const fileInputRef = useRef(null);
             const canvasRef = useRef(null);
 
+            // Fungsi helper untuk memastikan audio berjalan
+            const ensureAudioPlaying = () => {
+                if (player) {
+                    const state = player.getPlayerState();
+                    // Jika tidak bermain (unstarted, paused, video cued)
+                    if (state !== 1 && state !== 3) {
+                        player.unMute();
+                        player.setVolume(100);
+                        player.playVideo();
+                        setIsPlaying(true);
+                    }
+                }
+            };
+
             // --- LOAD YOUTUBE API ---
             useEffect(() => {
                 if (!window.YT) {
@@ -162,13 +176,22 @@
                             'showinfo': 0,
                             'loop': 1,
                             'playlist': videoId,
-                            'autoplay': 0
+                            'autoplay': 1, // Set autoplay ON
+                            'origin': window.location.origin
                         },
                         events: {
                             'onReady': (event) => {
                                 console.log("Player Ready");
                                 setPlayer(event.target);
-                                event.target.setVolume(100); 
+                                event.target.setVolume(100);
+                                event.target.playVideo(); // Force play on ready
+                                setIsPlaying(true);
+                            },
+                            'onStateChange': (event) => {
+                                // 1 = playing
+                                if (event.data === 1) {
+                                    setIsPlaying(true);
+                                }
                             }
                         }
                     });
@@ -179,14 +202,14 @@
             useEffect(() => {
                 if(player && videoId) {
                     player.loadVideoById(videoId);
-                    player.pauseVideo();
+                    // Jangan pause bila tukar ID, terus main
                 }
             }, [videoId, player]);
 
             // Reveal Sequence
             useEffect(() => {
                 if (gameStatus === 'revealed') {
-                    // UPDATED: Selepas 3 saat (bukan 10s), masuk mode Ramadan
+                    // UPDATED: Selepas 3 saat, masuk mode Ramadan
                     const timer = setTimeout(() => {
                         setShowRamadan(true);
                     }, 3000); 
@@ -204,25 +227,10 @@
                         applauseRef.current.play().catch(e => console.log("Applause blocked", e));
                     }
 
-                    // 2. Play YouTube Music
-                    if (player) {
-                        player.unMute();
-                        player.setVolume(100);
-                        player.playVideo();
-                        setIsPlaying(true);
-                        
-                        // Fallback check
-                        const intervalCheck = setInterval(() => {
-                            if(player.getPlayerState() !== 1) { // 1 = playing
-                                 player.playVideo(); 
-                            } else {
-                                clearInterval(intervalCheck);
-                            }
-                        }, 1000);
-                        setTimeout(() => clearInterval(intervalCheck), 5000);
-                    }
+                    // 2. Ensure YouTube Music is STILL playing
+                    ensureAudioPlaying();
                 }
-            }, [showRamadan, player]);
+            }, [showRamadan]);
 
             // Timer Countdown Ramadan
             useEffect(() => {
@@ -302,12 +310,9 @@
                     setPieces(piecesWithPos);
                     setGameStatus('playing');
                     setShowRamadan(false);
-                    setIsPlaying(false);
+                    // setIsPlaying(false); <-- JANGAN STOP LAGU
                     
-                    if(player) {
-                        player.pauseVideo();
-                        player.seekTo(0);
-                    }
+                    // JANGAN PAUSE VIDEO DI SINI, BIAR IA TERUS MAIN
                 };
             };
 
@@ -318,10 +323,12 @@
                     setImage(url);
                     setGameStatus('setup');
                     setShowRamadan(false);
+                    ensureAudioPlaying(); // Pastikan lagu jalan bila user upload
                 }
             };
 
             const startGame = () => {
+                ensureAudioPlaying(); // Pastikan lagu jalan bila user tekan start
                 if (image) processImageToPuzzle(image);
             };
 
@@ -353,14 +360,7 @@
             };
 
             const startCountdown = () => {
-                // Warm up player
-                if(player && player.playVideo) {
-                    player.mute(); 
-                    player.playVideo(); 
-                    setTimeout(() => {
-                        player.pauseVideo();
-                    }, 300);
-                }
+                ensureAudioPlaying(); // Pastikan lagu masih jalan
 
                 setGameStatus('counting');
                 setCount(1);
@@ -382,11 +382,7 @@
                 setCount(0);
                 setSelectedPiece(null);
                 setShowRamadan(false);
-                setIsPlaying(false);
-                if(player) {
-                    player.pauseVideo();
-                    player.seekTo(0);
-                }
+                // JANGAN PAUSE VIDEO DI SINI
             };
 
             const toggleFullScreen = async () => {
@@ -416,7 +412,7 @@
             };
 
             return (
-                <div className="min-h-screen bg-[#020617] text-white font-sans flex flex-col overflow-hidden relative">
+                <div className="min-h-screen bg-[#020617] text-white font-sans flex flex-col overflow-hidden relative" onClick={ensureAudioPlaying}>
                 <canvas ref={canvasRef} className="hidden"></canvas>
                 
                 {/* YOUTUBE HIDDEN DIV */}
