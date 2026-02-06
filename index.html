@@ -140,6 +140,31 @@
             const audioInputRef = useRef(null);
             const canvasRef = useRef(null);
 
+            // --- AUDIO FADE HELPER ---
+            const fadeOutAudio = (audioRef, duration = 2000) => {
+                if (!audioRef.current) return;
+                const audio = audioRef.current;
+                const originalVolume = audio.volume; // usually 1.0
+                const steps = 20;
+                const stepTime = duration / steps;
+                const volumeStep = originalVolume / steps;
+
+                const fadeInterval = setInterval(() => {
+                    if (audio.volume > volumeStep) {
+                        // Protect against floating point errors causing negative volume
+                        try {
+                            audio.volume -= volumeStep;
+                        } catch (e) {
+                            audio.volume = 0;
+                        }
+                    } else {
+                        audio.volume = 0;
+                        audio.pause();
+                        clearInterval(fadeInterval);
+                    }
+                }, stepTime);
+            };
+
             // --- FLOW LOGIC ---
 
             // 1. Apabila COUNTING tamat (1..5)
@@ -164,12 +189,12 @@
                 }
             }, [gameStatus]);
 
-            // 3. Apabila VIDEO bermula (STOP Background Music)
+            // 3. Apabila VIDEO bermula (STOP Background Music with FADE)
             useEffect(() => {
                 if (gameStatus === 'show_video' && videoRef.current) {
-                    // Pause Background Music
-                    if(bgMusicRef.current) {
-                        bgMusicRef.current.pause();
+                    // Fade Out Background Music (Jangan stop mengejut)
+                    if(bgMusicRef.current && !bgMusicRef.current.paused) {
+                        fadeOutAudio(bgMusicRef, 2000); // Fade 2 saat
                     }
                     
                     // Stop Applause Effect
@@ -187,8 +212,9 @@
             // 4. Apabila Video TAMAT (Sambung Background Music)
             const handleVideoEnd = () => {
                 setGameStatus('show_ramadan');
-                // Resume Background Music for ending
+                // Resume Background Music for ending (Reset volume first)
                 if(bgMusicRef.current) {
+                    bgMusicRef.current.volume = 1.0;
                     bgMusicRef.current.play().catch(e => console.log("Audio resume blocked", e));
                 }
             };
@@ -236,6 +262,7 @@
                     // Mula Game & Mula Lagu
                     setGameStatus('playing');
                     if(bgMusicRef.current) {
+                        bgMusicRef.current.volume = 1.0; // Reset volume
                         bgMusicRef.current.currentTime = 0;
                         bgMusicRef.current.play().catch(e => console.log("Start music blocked", e));
                     }
@@ -296,7 +323,10 @@
                     
                     // Check Win
                     const isWin = newPieces.every((p, idx) => p.id === idx);
-                    if (isWin) setTimeout(() => setGameStatus('solved'), 300);
+                    if (isWin) {
+                        // DELAY: Tunggu 1.5 saat untuk lihat puzzle penuh sebelum 'solved'
+                        setTimeout(() => setGameStatus('solved'), 1500);
+                    }
                 }
             };
 
@@ -325,6 +355,7 @@
                 if(bgMusicRef.current) {
                     bgMusicRef.current.pause();
                     bgMusicRef.current.currentTime = 0;
+                    bgMusicRef.current.volume = 1.0;
                 }
             };
 
