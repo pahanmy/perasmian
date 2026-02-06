@@ -3,43 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gimik Perasmian</title>
+    <title>Gimik Perasmian Grand (Full Offline)</title>
     
-    <!-- React & ReactDOM (Enjin Utama) -->
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel (Untuk baca kod JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS (Untuk Design Cantik) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Font Digital & Serif untuk Ramadan -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Cinzel:wght@400;700;900&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
 
-    <!-- Custom Styles untuk Animasi -->
     <style>
-        body { margin: 0; padding: 0; background-color: #020617; color: white; } 
+        body { margin: 0; padding: 0; background-color: #020617; color: white; overflow: hidden; } 
         
         @keyframes number-pop {
           0% { transform: scale(0.5); opacity: 0; }
           50% { transform: scale(1.2); opacity: 1; }
           100% { transform: scale(1); opacity: 0; }
         }
-        .animate-number-pop {
-          animation: number-pop 0.9s ease-out forwards;
-        }
+        .animate-number-pop { animation: number-pop 0.9s ease-out forwards; }
 
         @keyframes confetti {
           0% { transform: translateY(0) rotate(0deg); opacity: 1; }
           100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
-        .animate-confetti {
-          animation-name: confetti;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
+        .animate-confetti { animation: confetti linear infinite; }
 
         @keyframes shimmer {
             0% { background-position: -1000px 0; }
@@ -59,24 +48,11 @@
             50% { transform: translateY(-15px); }
             100% { transform: translateY(0px); }
         }
-        .animate-float {
-            animation: float 5s ease-in-out infinite;
-        }
+        .animate-float { animation: float 5s ease-in-out infinite; }
         
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); }
-            50% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.6); }
-        }
-
-        .font-digital {
-            font-family: 'Share Tech Mono', monospace;
-        }
-        .font-cinzel {
-            font-family: 'Cinzel', serif;
-        }
-        .font-playfair {
-            font-family: 'Playfair Display', serif;
-        }
+        .font-digital { font-family: 'Share Tech Mono', monospace; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .font-playfair { font-family: 'Playfair Display', serif; }
         
         .gold-gradient-text {
             background: linear-gradient(to bottom, #fcd34d, #d97706, #fcd34d);
@@ -90,6 +66,25 @@
             border: 1px solid rgba(251, 191, 36, 0.3);
             box-shadow: 0 0 40px rgba(0,0,0,0.5);
         }
+
+        /* Video Container Helper */
+        .video-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 40; /* Above everything except controls when active */
+            background: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+        .video-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        video { width: 100%; height: 100%; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -98,166 +93,107 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- IKON KOMPONEN ---
-        const Icon = ({ children, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>
-        );
+        // --- ICONS ---
+        const Icon = ({ children, ...props }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>);
         const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></Icon>;
         const Monitor = (props) => <Icon {...props}><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></Icon>;
         const Maximize = (props) => <Icon {...props}><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></Icon>;
         const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
         const Play = (props) => <Icon {...props}><polygon points="6 3 20 12 6 21 6 3"/></Icon>;
-        const XCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></Icon>;
         const Moon = (props) => <Icon {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></Icon>;
-        const Youtube = (props) => <Icon {...props}><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></Icon>;
-        const Speaker = (props) => <Icon {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></Icon>;
+        const VideoIcon = (props) => <Icon {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></Icon>;
+        const ImageIcon = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></Icon>;
+        const Music = (props) => <Icon {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></Icon>;
+        const SkipForward = (props) => <Icon {...props}><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></Icon>;
 
-        // --- APLIKASI UTAMA ---
         const App = () => {
-            const [image, setImage] = useState(null);
-            // Default YouTube ID: Maher Zain - Ramadan (5-Xv4KZji9o)
-            const [videoId, setVideoId] = useState("5-Xv4KZji9o");
+            // --- STATE UTAMA ---
+            const [puzzleImage, setPuzzleImage] = useState(null); // Gambar Puzzle (A)
+            const [posterImage, setPosterImage] = useState(null); // Gambar Poster Khas (B)
+            const [videoSrc, setVideoSrc] = useState(null); // Video File (Local)
+            const [audioSrc, setAudioSrc] = useState(null); // Audio File (Local - Background)
+            
             const [pieces, setPieces] = useState([]);
-            // UPDATED: Grid size 2x2 (4 Keping) - Sangat Mudah
-            const [gridSize, setGridSize] = useState({ rows: 2, cols: 2 });
+            const gridSize = { rows: 2, cols: 2 }; // Puzzle Mudah (4 keping)
             
             const [selectedPiece, setSelectedPiece] = useState(null);
+            
+            // Status Aliran: setup -> playing -> solved -> counting -> show_poster -> show_video -> show_ramadan
             const [gameStatus, setGameStatus] = useState('setup'); 
             const [count, setCount] = useState(0);
             const [showControls, setShowControls] = useState(true);
             const [title, setTitle] = useState("MAJLIS PERASMIAN");
             const [notification, setNotification] = useState(null);
-            const [isPlaying, setIsPlaying] = useState(false);
             
-            // State untuk Ramadan
-            const [showRamadan, setShowRamadan] = useState(false);
+            // Ramadan Countdown State
             const [timeToRamadan, setTimeToRamadan] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-            
-            const [player, setPlayer] = useState(null);
-            const applauseRef = useRef(null);
-            
-            // Tarikh sasaran Ramadan (Anggaran 18 Feb 2026)
             const ramadanTarget = new Date('2026-02-18T00:00:00'); 
 
-            const fileInputRef = useRef(null);
+            // Refs
+            const videoRef = useRef(null); // HTML5 Video Player
+            const bgMusicRef = useRef(null); // Background Music Player
+            const applauseRef = useRef(null); // Applause Effect (Sound Effect)
+            
+            const puzzleInputRef = useRef(null);
+            const posterInputRef = useRef(null);
+            const videoInputRef = useRef(null);
+            const audioInputRef = useRef(null);
             const canvasRef = useRef(null);
 
-            // Fungsi helper untuk memastikan audio berjalan
-            const ensureAudioPlaying = () => {
-                if (player) {
-                    const state = player.getPlayerState();
-                    // Jika tidak bermain (unstarted, paused, video cued)
-                    if (state !== 1 && state !== 3) {
-                        player.unMute();
-                        player.setVolume(100);
-                        player.playVideo();
-                        setIsPlaying(true);
+            // --- FLOW LOGIC ---
+
+            // 1. Apabila COUNTING tamat (1..5)
+            useEffect(() => {
+                if (gameStatus === 'counting' && count > 5) {
+                    setGameStatus('show_poster');
+                    // Mainkan tepuk tangan (Sound Effect)
+                    if(applauseRef.current) {
+                        applauseRef.current.currentTime = 0;
+                        applauseRef.current.play().catch(e => console.log("Audio block", e));
                     }
                 }
-            };
+            }, [count, gameStatus]);
 
-            // --- LOAD YOUTUBE API ---
+            // 2. Apabila POSTER dipaparkan (Tunggu 6 saat, kemudian masuk Video)
             useEffect(() => {
-                if (!window.YT) {
-                    const tag = document.createElement('script');
-                    tag.src = "https://www.youtube.com/iframe_api";
-                    const firstScriptTag = document.getElementsByTagName('script')[0];
-                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-                }
-
-                window.onYouTubeIframeAPIReady = () => {
-                    const newPlayer = new window.YT.Player('youtube-player-div', {
-                        height: '0',
-                        width: '0',
-                        videoId: videoId,
-                        playerVars: {
-                            'playsinline': 1,
-                            'controls': 0,
-                            'showinfo': 0,
-                            'loop': 1,
-                            'playlist': videoId,
-                            'autoplay': 1, // Set autoplay ON
-                            'origin': window.location.origin
-                        },
-                        events: {
-                            'onReady': (event) => {
-                                console.log("Player Ready");
-                                setPlayer(event.target);
-                                event.target.setVolume(100);
-                                event.target.playVideo(); // Force play on ready
-                                setIsPlaying(true);
-                            },
-                            'onStateChange': (event) => {
-                                // 1 = playing
-                                if (event.data === 1) {
-                                    setIsPlaying(true);
-                                }
-                            }
-                        }
-                    });
-                };
-            }, []);
-
-            // Update video ID
-            useEffect(() => {
-                if(player && videoId) {
-                    player.loadVideoById(videoId);
-                    // Jangan pause bila tukar ID, terus main
-                }
-            }, [videoId, player]);
-
-            // Reveal Sequence
-            useEffect(() => {
-                if (gameStatus === 'revealed') {
-                    // UPDATED: Selepas 3 saat, masuk mode Ramadan
+                if (gameStatus === 'show_poster') {
                     const timer = setTimeout(() => {
-                        setShowRamadan(true);
-                    }, 3000); 
+                        setGameStatus('show_video');
+                    }, 6000); // 6 saat masa bergambar/poster
                     return () => clearTimeout(timer);
                 }
             }, [gameStatus]);
 
-            // AUTO-PLAY LOGIC: Ramadan Mode + Applause
+            // 3. Apabila VIDEO bermula (STOP Background Music)
             useEffect(() => {
-                if (showRamadan) {
-                    // 1. Play Applause
+                if (gameStatus === 'show_video' && videoRef.current) {
+                    // Pause Background Music
+                    if(bgMusicRef.current) {
+                        bgMusicRef.current.pause();
+                    }
+                    
+                    // Stop Applause Effect
                     if(applauseRef.current) {
+                        applauseRef.current.pause();
                         applauseRef.current.currentTime = 0;
-                        applauseRef.current.volume = 1.0;
-                        applauseRef.current.play().catch(e => console.log("Applause blocked", e));
                     }
-
-                    // 2. Ensure YouTube Music is STILL playing
-                    ensureAudioPlaying();
+                    
+                    // Play Video
+                    videoRef.current.currentTime = 0;
+                    videoRef.current.play().catch(e => console.log("Autoplay blocked", e));
                 }
-            }, [showRamadan]);
+            }, [gameStatus]);
 
-            // Timer Countdown Ramadan
-            useEffect(() => {
-                const calculateTime = () => {
-                    const now = new Date();
-                    const difference = ramadanTarget - now;
+            // 4. Apabila Video TAMAT (Sambung Background Music)
+            const handleVideoEnd = () => {
+                setGameStatus('show_ramadan');
+                // Resume Background Music for ending
+                if(bgMusicRef.current) {
+                    bgMusicRef.current.play().catch(e => console.log("Audio resume blocked", e));
+                }
+            };
 
-                    if (difference > 0) {
-                        return {
-                            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                            hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                            minutes: Math.floor((difference / 1000 / 60) % 60),
-                            seconds: Math.floor((difference / 1000) % 60)
-                        };
-                    } else {
-                        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-                    }
-                };
-
-                const timer = setInterval(() => {
-                    setTimeToRamadan(calculateTime());
-                }, 1000);
-
-                return () => clearInterval(timer);
-            }, []);
-
-            // --- IMAGE PROCESSING ---
+            // --- GAME LOGIC ---
             const processImageToPuzzle = (imageUrl) => {
                 const img = new Image();
                 img.crossOrigin = "anonymous";
@@ -280,13 +216,7 @@
 
                     for (let row = 0; row < gridSize.rows; row++) {
                         for (let col = 0; col < gridSize.cols; col++) {
-                            const pieceData = ctx.getImageData(
-                                col * pieceWidth, 
-                                row * pieceHeight, 
-                                pieceWidth, 
-                                pieceHeight
-                            );
-                            
+                            const pieceData = ctx.getImageData(col * pieceWidth, row * pieceHeight, pieceWidth, pieceHeight);
                             const tempCanvas = document.createElement('canvas');
                             tempCanvas.width = pieceWidth;
                             tempCanvas.height = pieceHeight;
@@ -295,85 +225,92 @@
 
                             newPieces.push({
                                 id: row * gridSize.cols + col,
-                                currentPos: row * gridSize.cols + col, 
                                 src: tempCanvas.toDataURL(), 
                             });
                         }
                     }
 
                     const shuffled = [...newPieces].sort(() => Math.random() - 0.5);
-                    const piecesWithPos = shuffled.map((p, index) => ({
-                        ...p,
-                        currentPos: index
-                    }));
+                    setPieces(shuffled.map((p, index) => ({ ...p, currentPos: index })));
                     
-                    setPieces(piecesWithPos);
+                    // Mula Game & Mula Lagu
                     setGameStatus('playing');
-                    setShowRamadan(false);
-                    // setIsPlaying(false); <-- JANGAN STOP LAGU
-                    
-                    // JANGAN PAUSE VIDEO DI SINI, BIAR IA TERUS MAIN
+                    if(bgMusicRef.current) {
+                        bgMusicRef.current.currentTime = 0;
+                        bgMusicRef.current.play().catch(e => console.log("Start music blocked", e));
+                    }
                 };
             };
 
-            const handleImageUpload = (e) => {
+            const handlePuzzleUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const url = URL.createObjectURL(file);
-                    setImage(url);
+                    setPuzzleImage(URL.createObjectURL(file));
                     setGameStatus('setup');
-                    setShowRamadan(false);
-                    ensureAudioPlaying(); // Pastikan lagu jalan bila user upload
+                }
+            };
+
+            const handlePosterUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setPosterImage(URL.createObjectURL(file));
+                    setNotification("Poster Khas Disimpan!");
+                    setTimeout(() => setNotification(null), 2000);
+                }
+            };
+
+            const handleVideoUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setVideoSrc(URL.createObjectURL(file));
+                    setNotification("Video Program Disimpan!");
+                    setTimeout(() => setNotification(null), 2000);
+                }
+            };
+
+            const handleAudioUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setAudioSrc(URL.createObjectURL(file));
+                    setNotification("Lagu Latar Disimpan!");
+                    setTimeout(() => setNotification(null), 2000);
                 }
             };
 
             const startGame = () => {
-                ensureAudioPlaying(); // Pastikan lagu jalan bila user tekan start
-                if (image) processImageToPuzzle(image);
+                if (puzzleImage) processImageToPuzzle(puzzleImage);
             };
 
             const handlePieceClick = (index) => {
                 if (gameStatus !== 'playing') return;
-
                 if (selectedPiece === null) {
-                setSelectedPiece(index);
+                    setSelectedPiece(index);
                 } else {
-                const newPieces = [...pieces];
-                const pieceA = newPieces[selectedPiece];
-                const pieceB = newPieces[index];
-
-                newPieces[selectedPiece] = pieceB;
-                newPieces[index] = pieceA;
-
-                setPieces(newPieces);
-                setSelectedPiece(null);
-
-                checkWin(newPieces);
-                }
-            };
-
-            const checkWin = (currentPieces) => {
-                const isWin = currentPieces.every((p, index) => p.id === index);
-                if (isWin) {
-                setTimeout(() => setGameStatus('solved'), 300);
+                    const newPieces = [...pieces];
+                    const pieceA = newPieces[selectedPiece];
+                    const pieceB = newPieces[index];
+                    newPieces[selectedPiece] = pieceB;
+                    newPieces[index] = pieceA;
+                    setPieces(newPieces);
+                    setSelectedPiece(null);
+                    
+                    // Check Win
+                    const isWin = newPieces.every((p, idx) => p.id === idx);
+                    if (isWin) setTimeout(() => setGameStatus('solved'), 300);
                 }
             };
 
             const startCountdown = () => {
-                ensureAudioPlaying(); // Pastikan lagu masih jalan
-
                 setGameStatus('counting');
                 setCount(1);
-                
                 const interval = setInterval(() => {
-                setCount((prev) => {
-                    if (prev >= 5) {
-                    clearInterval(interval);
-                    setGameStatus('revealed');
-                    return 5;
-                    }
-                    return prev + 1;
-                });
+                    setCount((prev) => {
+                        if (prev >= 5) {
+                            clearInterval(interval);
+                            return 6; // Trigger useEffect
+                        }
+                        return prev + 1;
+                    });
                 }, 1000); 
             };
 
@@ -381,8 +318,14 @@
                 setGameStatus('setup');
                 setCount(0);
                 setSelectedPiece(null);
-                setShowRamadan(false);
-                // JANGAN PAUSE VIDEO DI SINI
+                if(videoRef.current) {
+                    videoRef.current.pause();
+                    videoRef.current.currentTime = 0;
+                }
+                if(bgMusicRef.current) {
+                    bgMusicRef.current.pause();
+                    bgMusicRef.current.currentTime = 0;
+                }
             };
 
             const toggleFullScreen = async () => {
@@ -394,306 +337,242 @@
                     }
                 } catch (err) {
                     setNotification("Tekan F11 untuk Fullscreen");
-                    setTimeout(() => setNotification(null), 3000);
                 }
             };
 
-            const toggleAudio = () => {
-                if(player) {
-                    if(isPlaying) {
-                        player.pauseVideo();
-                        setIsPlaying(false);
-                    } else {
-                        player.unMute();
-                        player.playVideo();
-                        setIsPlaying(true);
+            // Clock Logic
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    const now = new Date();
+                    const diff = ramadanTarget - now;
+                    if (diff > 0) {
+                        setTimeToRamadan({
+                            days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+                            hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+                            minutes: Math.floor((diff / 1000 / 60) % 60),
+                            seconds: Math.floor((diff / 1000) % 60)
+                        });
                     }
-                }
-            };
+                }, 1000);
+                return () => clearInterval(timer);
+            }, []);
 
             return (
-                <div className="min-h-screen bg-[#020617] text-white font-sans flex flex-col overflow-hidden relative" onClick={ensureAudioPlaying}>
-                <canvas ref={canvasRef} className="hidden"></canvas>
-                
-                {/* YOUTUBE HIDDEN DIV */}
-                <div id="youtube-player-div" className="absolute top-0 left-0 opacity-0 z-[-1] pointer-events-none"></div>
+                <div className="min-h-screen bg-[#020617] text-white font-sans flex flex-col relative">
+                    <canvas ref={canvasRef} className="hidden"></canvas>
+                    
+                    {/* --- AUDIO PLAYERS --- */}
+                    {/* 1. Background Music (Manual Upload) - Loops */}
+                    <audio ref={bgMusicRef} src={audioSrc} loop></audio>
+                    {/* 2. Applause Effect (Hardcoded) - Plays once at Poster Reveal */}
+                    <audio ref={applauseRef} src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
 
-                {/* APPLAUSE AUDIO (Tepuk Tangan) */}
-                <audio ref={applauseRef} src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
-
-                {notification && (
-                    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] bg-amber-600 text-white px-6 py-3 rounded-full shadow-xl animate-bounce flex items-center gap-3 border border-amber-400">
-                        <CheckCircle size={20} />
-                        <span className="font-bold text-sm">{notification}</span>
+                    {/* --- VIDEO CONTAINER (OFFLINE/LOCAL VIDEO) --- */}
+                    <div className={`video-container ${gameStatus === 'show_video' ? 'active' : ''}`}>
+                        {videoSrc ? (
+                            <video 
+                                ref={videoRef}
+                                src={videoSrc}
+                                onEnded={handleVideoEnd}
+                                className="w-full h-full object-contain"
+                            ></video>
+                        ) : (
+                             <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                                <VideoIcon size={64} className="mb-4 opacity-50" />
+                                <p>Video Tidak Dijumpai. Sila Upload Video Program.</p>
+                             </div>
+                        )}
+                        
+                        {/* Skip Button (Safety net) */}
+                        {gameStatus === 'show_video' && (
+                            <button 
+                                onClick={handleVideoEnd}
+                                className="absolute bottom-10 right-10 bg-white/20 hover:bg-white/40 backdrop-blur text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 transition z-50 pointer-events-auto"
+                            >
+                                <SkipForward size={16} /> Tamat Video
+                            </button>
+                        )}
                     </div>
-                )}
 
-                {showControls && (
-                    <div className="bg-slate-900/90 backdrop-blur border-b border-slate-700 z-50 shadow-lg p-4 transition-all">
-                        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                                <Monitor className="text-amber-500" />
-                                <h1 className="font-bold text-amber-500 tracking-wider">PANEL GIMIK</h1>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-3">
-                                <input 
-                                    type="text" 
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    className="bg-slate-800 border border-slate-600 rounded px-3 py-1 text-sm w-48 text-white focus:border-amber-500 outline-none"
-                                    placeholder="Tajuk Majlis"
-                                />
-                                
-                                {/* Info text */}
-                                <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded border border-slate-600">
-                                    Puzzle: 4 Keping (Mudah)
-                                </span>
-
-                                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
-                                <button onClick={() => fileInputRef.current.click()} className="bg-slate-700 hover:bg-slate-600 border border-slate-500 px-3 py-1 rounded text-sm flex items-center gap-2 transition hover:text-amber-400">
-                                    <Upload size={14} /> {image ? "Tukar Gambar" : "Upload Banner"}
-                                </button>
-
-                                <div className="flex items-center gap-1 bg-slate-800 border border-slate-600 rounded px-2">
-                                    <Youtube size={14} className="text-red-500" />
-                                    <input 
-                                        type="text" 
-                                        value={videoId} 
-                                        onChange={(e) => setVideoId(e.target.value)}
-                                        className="bg-transparent border-none text-xs w-24 text-slate-300 focus:outline-none py-1"
-                                        placeholder="YouTube ID"
-                                    />
-                                </div>
-
-                                <button onClick={startGame} disabled={!image} className="bg-green-700 hover:bg-green-600 px-4 py-1 rounded text-sm disabled:opacity-50 font-bold shadow shadow-green-900 border border-green-500">
-                                    Mula Game
-                                </button>
-
-                                <button onClick={resetGame} className="bg-amber-700 hover:bg-amber-600 px-3 py-1 rounded text-sm border border-amber-500">
-                                    Reset
-                                </button>
-
-                                <button onClick={toggleFullScreen} className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm">
-                                    <Maximize size={14} />
-                                </button>
-
-                                <button onClick={() => setShowControls(false)} className="bg-red-600 hover:bg-red-500 px-3 py-1 rounded text-sm font-bold animate-pulse shadow-red-900 shadow-lg">
-                                    HIDE MENU
-                                </button>
-                            </div>
+                    {notification && (
+                        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] bg-amber-600 text-white px-6 py-3 rounded-full shadow-xl animate-bounce flex items-center gap-3">
+                            <CheckCircle size={20} />
+                            <span className="font-bold text-sm">{notification}</span>
                         </div>
-                    </div>
-                )}
-
-                <div className="flex-1 relative flex items-center justify-center bg-[#020617] p-4 perspective-1000">
-                    {!showControls && (
-                        <div 
-                            className="absolute top-0 left-0 w-full h-4 z-50 hover:bg-white/10 cursor-pointer"
-                            onClick={() => setShowControls(true)} 
-                        />
                     )}
 
-                    {gameStatus === 'setup' && (
-                        <div className="text-center">
-                            {image ? (
-                                <div className="flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                                    <div className="relative group">
-                                        <div className="absolute -inset-1 bg-gradient-to-r from-amber-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                                        <img src={image} alt="Preview" className="relative max-h-[50vh] shadow-2xl border-2 border-slate-700 mb-6 opacity-80 rounded-lg" />
+                    {/* --- CONTROL PANEL --- */}
+                    {showControls && (
+                        <div className="bg-slate-900/95 backdrop-blur border-b border-slate-700 z-[60] shadow-lg p-4 transition-all absolute w-full top-0">
+                            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Monitor className="text-amber-500" />
+                                    <h1 className="font-bold text-amber-500 tracking-wider">PANEL GIMIK</h1>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm w-32 text-white" placeholder="Tajuk" />
+                                    
+                                    {/* 1. Puzzle Input */}
+                                    <input type="file" accept="image/*" ref={puzzleInputRef} onChange={handlePuzzleUpload} className="hidden" />
+                                    <button onClick={() => puzzleInputRef.current.click()} className="bg-slate-700 border border-slate-500 px-3 py-1 rounded text-xs flex items-center gap-1 hover:text-amber-400">
+                                        <Upload size={12} /> {puzzleImage ? "Tukar Puzzle" : "1. Puzzle"}
+                                    </button>
+
+                                    {/* 2. Poster Input */}
+                                    <input type="file" accept="image/*" ref={posterInputRef} onChange={handlePosterUpload} className="hidden" />
+                                    <button onClick={() => posterInputRef.current.click()} className="bg-slate-700 border border-slate-500 px-3 py-1 rounded text-xs flex items-center gap-1 hover:text-amber-400">
+                                        <ImageIcon size={12} /> {posterImage ? "Tukar Poster" : "2. Poster"}
+                                    </button>
+
+                                    {/* 3. Video Input */}
+                                    <input type="file" accept="video/*" ref={videoInputRef} onChange={handleVideoUpload} className="hidden" />
+                                    <button onClick={() => videoInputRef.current.click()} className="bg-slate-700 border border-slate-500 px-3 py-1 rounded text-xs flex items-center gap-1 hover:text-amber-400">
+                                        <VideoIcon size={12} /> {videoSrc ? "Tukar Video" : "3. Video"}
+                                    </button>
+                                    
+                                    {/* 4. Audio Input (BARU) */}
+                                    <input type="file" accept="audio/*" ref={audioInputRef} onChange={handleAudioUpload} className="hidden" />
+                                    <button onClick={() => audioInputRef.current.click()} className="bg-slate-700 border border-slate-500 px-3 py-1 rounded text-xs flex items-center gap-1 hover:text-amber-400">
+                                        <Music size={12} /> {audioSrc ? "Tukar Lagu" : "4. Lagu Latar"}
+                                    </button>
+
+                                    <div className="h-6 w-px bg-slate-600 mx-1"></div>
+
+                                    <button onClick={startGame} disabled={!puzzleImage} className="bg-green-700 hover:bg-green-600 px-4 py-1 rounded text-xs font-bold border border-green-500 disabled:opacity-50">
+                                        Mula
+                                    </button>
+                                    <button onClick={resetGame} className="bg-amber-700 hover:bg-amber-600 px-3 py-1 rounded text-xs border border-amber-500">
+                                        Reset
+                                    </button>
+                                    <button onClick={toggleFullScreen} className="bg-slate-700 px-3 py-1 rounded text-xs">
+                                        <Maximize size={12} />
+                                    </button>
+                                    <button onClick={() => setShowControls(false)} className="bg-red-600 px-3 py-1 rounded text-xs font-bold">
+                                        HIDE
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- MAIN STAGE --- */}
+                    <div className="flex-1 relative flex items-center justify-center bg-[#020617] p-4 perspective-1000 h-screen w-screen">
+                        
+                        {!showControls && <div className="absolute top-0 left-0 w-full h-4 z-[55] hover:bg-white/10 cursor-pointer" onClick={() => setShowControls(true)} />}
+
+                        {/* 1. SETUP STATE */}
+                        {gameStatus === 'setup' && (
+                            <div className="text-center animate-in fade-in zoom-in duration-500">
+                                {puzzleImage ? (
+                                    <>
+                                        <img src={puzzleImage} alt="Puzzle Preview" className="max-h-[40vh] shadow-2xl border-2 border-slate-700 mb-6 rounded-lg mx-auto" />
+                                        <div className="text-slate-400 mb-4 text-sm max-w-md mx-auto">
+                                            <p>Status Bahan:</p>
+                                            <ul className="flex justify-center gap-4 mt-2">
+                                                <li className={puzzleImage ? "text-green-400" : "text-red-400"}>1. Puzzle ✓</li>
+                                                <li className={posterImage ? "text-green-400" : "text-red-400"}>2. Poster {posterImage ? '✓' : '✗'}</li>
+                                                <li className={videoSrc ? "text-green-400" : "text-red-400"}>3. Video {videoSrc ? '✓' : '✗'}</li>
+                                                <li className={audioSrc ? "text-green-400" : "text-red-400"}>4. Lagu {audioSrc ? '✓' : '✗'}</li>
+                                            </ul>
+                                        </div>
+                                        {!showControls && <button onClick={startGame} className="px-8 py-3 bg-green-600 text-white font-bold rounded-full shadow-lg hover:scale-105 transition">MULAKAN</button>}
+                                    </>
+                                ) : (
+                                    <div className="p-10 border-2 border-dashed border-slate-700 rounded-2xl">
+                                        <Upload size={48} className="mx-auto mb-4 opacity-40 text-amber-500" />
+                                        <h2 className="text-xl font-bold text-slate-200">Sila Upload Gambar Puzzle</h2>
                                     </div>
-                                    <p className="text-xl text-slate-300 mb-6 font-light tracking-wide">Gambar sedia. Sila tekan butang hijau di atas.</p>
-                                    {!showControls && (
-                                        <button onClick={startGame} className="px-10 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-full shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:scale-105 transition transform border border-green-400">
-                                            MULAKAN GIMIK
-                                        </button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 2. PLAYING PUZZLE */}
+                        {(gameStatus === 'playing' || gameStatus === 'solved') && (
+                            <div className="flex flex-col items-center z-10">
+                                <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 mb-8 tracking-widest drop-shadow-2xl text-center font-cinzel uppercase">{title}</h1>
+                                <div className="grid gap-1 bg-slate-800 p-2 rounded-xl shadow-2xl border border-slate-700" style={{ gridTemplateColumns: `repeat(${gridSize.cols}, 1fr)`, width: '900px', maxWidth: '90vw', aspectRatio: '1.5' }}>
+                                    {pieces.map((piece, index) => (
+                                        <div key={index} onClick={() => handlePieceClick(index)} className={`relative overflow-hidden cursor-pointer transition-all duration-300 ${selectedPiece === index ? 'ring-4 ring-amber-500 z-10 scale-105' : ''} ${gameStatus === 'solved' ? 'border-none' : 'border border-slate-900'}`}>
+                                            <img src={piece.src} className="w-full h-full object-cover block" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="mt-4 text-amber-500/80 animate-pulse font-mono text-sm">{gameStatus === 'playing' ? "Selesaikan Puzzle" : "Lengkap!"}</p>
+                            </div>
+                        )}
+
+                        {/* 3. BUTTON RASMIKAN */}
+                        {gameStatus === 'solved' && (
+                            <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm flex items-center justify-center animate-in fade-in">
+                                <div className="text-center">
+                                    <h2 className="text-3xl font-light text-white mb-8 tracking-[0.5em] uppercase font-cinzel">Sedia Untuk Dirasmikan</h2>
+                                    <button onClick={startCountdown} className="group relative inline-flex items-center gap-4 px-12 py-6 bg-gradient-to-b from-red-600 to-red-800 text-white rounded-full text-3xl font-black tracking-widest shadow-[0_0_60px_rgba(220,38,38,0.6)] hover:scale-105 transition-all ring-4 ring-red-600 border-t border-red-400">
+                                        <Play fill="currentColor" size={32} /> RASMIKAN
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 4. COUNTDOWN 1-5 */}
+                        {gameStatus === 'counting' && (
+                            <div className="absolute inset-0 z-30 bg-black flex items-center justify-center">
+                                <h1 key={count} className="text-[20rem] font-black text-transparent bg-clip-text bg-gradient-to-b from-blue-300 to-blue-600 animate-number-pop">{count}</h1>
+                            </div>
+                        )}
+
+                        {/* 5. POSTER KHAS (GAMBAR B) */}
+                        {gameStatus === 'show_poster' && (
+                            <div className="absolute inset-0 z-30 bg-black flex flex-col items-center justify-center animate-in zoom-in duration-1000">
+                                {[...Array(30)].map((_, i) => <div key={i} className="absolute animate-confetti" style={{ left: Math.random()*100+'%', top: '-20%', backgroundColor: ['#ef4444','#22c55e','#3b82f6','#eab308'][i%4], width: '10px', height: '20px', animationDuration: 2+Math.random()*2+'s' }} />)}
+                                
+                                <div className="relative p-2 bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 rounded-lg shadow-[0_0_100px_rgba(251,191,36,0.3)] animate-pulse">
+                                    {posterImage ? (
+                                        <img src={posterImage} alt="Grand Launch" className="max-h-[85vh] max-w-[95vw] rounded shadow-2xl object-contain bg-black" />
+                                    ) : (
+                                        <div className="h-[60vh] w-[80vw] bg-slate-800 flex items-center justify-center text-slate-500">Tiada Poster Khas Diupload</div>
                                     )}
                                 </div>
-                            ) : (
-                                <div className="p-10 border-2 border-dashed border-slate-700 rounded-2xl bg-slate-900/50">
-                                    <Upload size={64} className="mx-auto mb-4 opacity-40 text-amber-500" />
-                                    <h2 className="text-2xl font-bold mb-2 text-slate-200">Sila Upload Gambar Banner</h2>
-                                    <p className="text-slate-400">Gunakan menu di bahagian atas.</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {(gameStatus === 'playing' || gameStatus === 'solved') && (
-                        <div className="flex flex-col items-center w-full max-w-6xl z-10">
-                            <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 mb-10 tracking-widest drop-shadow-2xl text-center font-cinzel uppercase">
-                                {title}
-                            </h1>
-                            
-                            <div 
-                                className="grid gap-1 bg-slate-800 p-2 rounded-xl shadow-2xl border border-slate-700 relative"
-                                style={{
-                                    gridTemplateColumns: `repeat(${gridSize.cols}, 1fr)`,
-                                    width: '100%',
-                                    maxWidth: '900px',
-                                    aspectRatio: `${gridSize.cols}/${gridSize.rows}`,
-                                    boxShadow: '0 0 50px rgba(0,0,0,0.5)'
-                                }}
-                            >
-                                {pieces.map((piece, index) => {
-                                    const isSelected = selectedPiece === index;
-                                    return (
-                                        <div
-                                            key={index}
-                                            onClick={() => handlePieceClick(index)}
-                                            className={`
-                                                relative overflow-hidden cursor-pointer transition-all duration-300
-                                                ${isSelected ? 'ring-4 ring-amber-500 z-10 scale-105 shadow-2xl' : 'hover:brightness-110'}
-                                                ${gameStatus === 'solved' ? 'border-none' : 'border border-slate-900'}
-                                            `}
-                                        >
-                                            <img src={piece.src} alt="" className="w-full h-full object-cover block" />
-                                            {gameStatus === 'playing' && (
-                                                <div className={`absolute inset-0 transition-colors ${isSelected ? 'bg-amber-500/20' : 'hover:bg-white/5'}`} />
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                <h1 className="mt-8 text-6xl font-black animate-shimmer text-center drop-shadow-2xl font-cinzel">TAHNIAH</h1>
                             </div>
+                        )}
 
-                            <p className="mt-8 text-amber-500/80 animate-pulse font-mono text-sm uppercase tracking-widest">
-                                {gameStatus === 'playing' ? "Sila lengkapkan puzzle untuk perasmian" : "Puzzle Lengkap!"}
-                            </p>
-                        </div>
-                    )}
+                        {/* 6. FASA VIDEO: Diuruskan oleh div .video-container di atas */}
 
-                    {gameStatus === 'solved' && (
-                        <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-700">
-                            <div className="text-center transform transition-all hover:scale-105">
-                                <div className="mb-8 relative inline-block">
-                                    <div className="absolute inset-0 bg-green-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
-                                    <CheckCircle size={100} className="text-green-500 relative z-10" />
-                                </div>
-                                <h2 className="text-3xl font-light text-white mb-10 tracking-[0.5em] uppercase font-cinzel">Sedia Untuk Dirasmikan</h2>
-                                <button 
-                                    onClick={startCountdown}
-                                    className="group relative inline-flex items-center gap-4 px-16 py-8 bg-gradient-to-b from-red-600 to-red-800 text-white rounded-full text-4xl font-black tracking-widest shadow-[0_0_60px_rgba(220,38,38,0.6)] hover:shadow-[0_0_100px_rgba(220,38,38,0.8)] transition-all duration-300 ring-4 ring-offset-4 ring-offset-black ring-red-600 border-t border-red-400"
-                                >
-                                    <span className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
-                                    <Play fill="currentColor" size={40} />
-                                    RASMIKAN
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {gameStatus === 'counting' && (
-                        <div className="absolute inset-0 z-30 bg-black flex items-center justify-center">
-                            <div className="relative flex items-center justify-center">
-                                <div className="absolute inset-0 bg-blue-600 rounded-full animate-ping opacity-30 duration-1000"></div>
-                                <h1 
-                                    key={count} 
-                                    className="text-[20rem] font-black text-transparent bg-clip-text bg-gradient-to-b from-blue-300 to-blue-600 animate-number-pop drop-shadow-[0_0_50px_rgba(37,99,235,0.8)]"
-                                >
-                                    {count}
-                                </h1>
-                            </div>
-                        </div>
-                    )}
-
-                    {gameStatus === 'revealed' && (
-                        <div className="absolute inset-0 z-40 bg-black flex flex-col items-center justify-center overflow-hidden animate-in zoom-in duration-1000">
-                            {/* PART 1: GAMBAR (Hilang lepas 3s) */}
-                            <div className={`transition-all duration-1000 ease-in-out ${showRamadan ? 'opacity-0 scale-110 pointer-events-none absolute' : 'opacity-100 scale-100'} w-full h-full flex flex-col items-center justify-center relative`}>
-                                {[...Array(40)].map((_, i) => (
-                                    <div 
-                                        key={i}
-                                        className="absolute animate-confetti"
-                                        style={{
-                                            left: `${Math.random() * 100}%`,
-                                            top: `-20%`,
-                                            backgroundColor: ['#ef4444', '#22c55e', '#3b82f6', '#eab308', '#d946ef'][Math.floor(Math.random() * 5)],
-                                            width: '12px', height: '24px',
-                                            animationDuration: `${2 + Math.random() * 2}s`,
-                                            animationDelay: `${Math.random() * 1}s`
-                                        }}
-                                    />
-                                ))}
-
-                                <div className="relative p-3 bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 rounded-lg shadow-[0_0_100px_rgba(251,191,36,0.3)] animate-pulse-slow">
-                                    <img src={image} alt="Grand Launch" className="max-h-[80vh] max-w-[90vw] rounded shadow-2xl object-contain bg-black" />
-                                </div>
-
-                                <h1 className="mt-10 text-6xl md:text-8xl font-black animate-shimmer text-center drop-shadow-2xl tracking-wider font-cinzel">
-                                    TAHNIAH
-                                </h1>
-                            </div>
-
-                            {/* PART 2: RAMADAN THEME (PREMIUM GOLD & GREEN) */}
-                            <div className={`absolute inset-0 bg-[#022c22] flex flex-col items-center justify-center transition-all duration-1000 ${showRamadan ? 'opacity-100 z-50' : 'opacity-0 pointer-events-none'}`}>
-                                
-                                {/* Background Decorations */}
+                        {/* 7. RAMADAN THEME */}
+                        {gameStatus === 'show_ramadan' && (
+                            <div className="absolute inset-0 z-50 bg-[#022c22] flex flex-col items-center justify-center animate-in fade-in duration-1000">
                                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')] opacity-10"></div>
                                     <div className="absolute top-10 left-10 text-amber-500/10 animate-float"><Moon size={300} /></div>
                                     <div className="absolute bottom-10 right-10 text-amber-500/10 animate-float" style={{animationDelay: '2s'}}><Moon size={200} /></div>
-                                    
-                                    {/* Gold Particles */}
-                                    {[...Array(20)].map((_, i) => (
-                                        <div key={i} className="absolute rounded-full bg-amber-400 blur-[1px]" 
-                                            style={{
-                                                top: Math.random() * 100 + '%', left: Math.random() * 100 + '%',
-                                                width: Math.random() * 4 + 'px', height: Math.random() * 4 + 'px',
-                                                opacity: Math.random() * 0.5 + 0.2,
-                                                animation: `float ${5 + Math.random() * 5}s infinite`
-                                            }} 
-                                        />
-                                    ))}
                                 </div>
 
-                                {/* Main Content Card */}
-                                <div className="z-10 text-center p-12 glass-panel rounded-3xl max-w-6xl w-[90%] border-t border-b border-amber-500/50 relative">
-                                    
-                                    {/* Play Button Overlay (Backup) */}
-                                    <button onClick={toggleAudio} className="absolute top-4 right-4 text-amber-500/50 hover:text-amber-400 transition">
-                                        {isPlaying ? <span className="animate-pulse">Playing...</span> : <Speaker size={24} />}
-                                    </button>
-
-                                    <div className="flex justify-center mb-8 animate-float">
-                                        <div className="p-4 rounded-full border-2 border-amber-500/30 bg-gradient-to-b from-amber-900/50 to-transparent shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                                <div className="z-10 text-center p-10 glass-panel rounded-3xl max-w-6xl w-[90%] border-t border-b border-amber-500/50 relative">
+                                    <div className="flex justify-center mb-6 animate-float">
+                                        <div className="p-4 rounded-full border-2 border-amber-500/30 bg-gradient-to-b from-amber-900/50 to-transparent">
                                             <Moon size={80} className="text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]" fill="currentColor" />
                                         </div>
                                     </div>
 
-                                    <h2 className="text-2xl md:text-3xl text-amber-200 tracking-[0.5em] uppercase mb-2 font-cinzel">Menghitung Hari</h2>
-                                    
+                                    <h2 className="text-2xl text-amber-200 tracking-[0.5em] uppercase mb-2 font-cinzel">Menghitung Hari</h2>
                                     <div className="w-32 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-8"></div>
-
-                                    <h1 className="text-5xl md:text-8xl font-black gold-gradient-text drop-shadow-lg font-cinzel mb-12 tracking-wide leading-tight">
-                                        RAMADAN AL-MUBARAK
-                                    </h1>
+                                    <h1 className="text-5xl md:text-8xl font-black gold-gradient-text drop-shadow-lg font-cinzel mb-10">RAMADAN AL-MUBARAK</h1>
                                     
-                                    {/* CLOCK */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 font-digital px-4">
-                                        {[
-                                            { val: timeToRamadan.days, label: 'HARI' },
-                                            { val: timeToRamadan.hours, label: 'JAM' },
-                                            { val: timeToRamadan.minutes, label: 'MINIT' },
-                                            { val: timeToRamadan.seconds, label: 'SAAT' }
-                                        ].map((item, idx) => (
-                                            <div key={idx} className="bg-gradient-to-b from-emerald-950 to-black p-6 rounded-xl border border-amber-500/20 shadow-2xl group hover:border-amber-500/60 transition-all duration-500 relative overflow-hidden">
-                                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50"></div>
-                                                <div className="text-5xl md:text-7xl font-bold text-amber-50 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">{item.val}</div>
-                                                <div className="text-amber-500 text-sm tracking-[0.3em] mt-3 font-cinzel font-bold">{item.label}</div>
+                                    <div className="grid grid-cols-4 gap-4 font-digital px-4">
+                                        {[{v:timeToRamadan.days,l:'HARI'}, {v:timeToRamadan.hours,l:'JAM'}, {v:timeToRamadan.minutes,l:'MINIT'}, {v:timeToRamadan.seconds,l:'SAAT'}].map((t,i) => (
+                                            <div key={i} className="bg-gradient-to-b from-emerald-950 to-black p-4 rounded-xl border border-amber-500/20 shadow-2xl">
+                                                <div className="text-4xl md:text-6xl font-bold text-amber-50">{t.v}</div>
+                                                <div className="text-amber-500 text-xs tracking-[0.3em] mt-2 font-cinzel">{t.l}</div>
                                             </div>
                                         ))}
                                     </div>
-
-                                    <p className="text-amber-100/70 text-lg md:text-2xl italic mt-12 font-playfair tracking-wide">
-                                        "Allahumma Ballighna Ramadan"
-                                        <br/>
-                                        <span className="text-sm not-italic font-sans text-amber-500/50 mt-2 block tracking-widest uppercase">Semoga Kita Dipertemukan</span>
-                                    </p>
+                                    <p className="text-amber-100/70 text-xl italic mt-10 font-playfair tracking-wide">"Allahumma Ballighna Ramadan"</p>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+
+                    </div>
                 </div>
             );
         };
